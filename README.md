@@ -147,8 +147,8 @@ flowchart TD
         Daemon["adbDaemon.py Persistent Worker (Port 5055)<br/>Open TCP Socket to TV (50ms response)"]
     end
 
-    subgraph TV["Sony BRAVIA 4K Smart TV (192.168.29.29)"]
-        ADB["Android TV ADB Daemon (Port 5555)"]
+    subgraph TV["Sony BRAVIA 4K Smart TV (192.168.XX.XX)"]
+        ADB["Android TV ADB Daemon (Port XXXX)"]
         Launcher["com.gathin.tvhome (Clean Launcher)<br/>• Floating Glass Dock<br/>• Live Weather Pill<br/>• Static Wallpaper Engine"]
         Cleaner["com.gathin.tvhome.CleanerActivity<br/>• Memory Optimizer<br/>• Cache Cleaner"]
         Screensaver["com.gathin.tvhome.ClockActivity<br/>• 5-Min Idle Trigger<br/>• 18s Faded Transitions<br/>• Up to 5 Selected Carousel Slides"]
