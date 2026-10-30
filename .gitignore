@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Local databases & temp files
+*.db
+*.db-journal
+server/control_center.db
+server/control_center.db-journal
+server/tv_control.db
+server/temp_config.json
+
+# Live screen mirror snapshots (auto-generated)
+server/shots/*
+!server/shots/.gitkeep
+
+# User private audio recordings
+recordings/*
+!recordings/.gitkeep
+
+# System & OS
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

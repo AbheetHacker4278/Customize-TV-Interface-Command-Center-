@@ -1,0 +1,21 @@
+{
+  "name": "customize-tv-interface-command-center",
+  "version": "1.0.0",
+  "description": "Apple TV-inspired minimalist interface, high-speed remote control system, and web-based command center for Android TV / Sony BRAVIA 4K Smart TVs",
+  "scripts": {
+    "start": "cd server && node server.js",
+    "build:client": "cd client && npm run build",
+    "install:all": "cd client && npm install && cd ../server && npm install"
+  },
+  "keywords": [
+    "android-tv",
+    "sony-bravia",
+    "remote-control",
+    "tv-launcher",
+    "apple-tv-style",
+    "smart-tv",
+    "clean-tv"
+  ],
+  "author": "AbheetHacker4278",
+  "license": "MIT"
+}
