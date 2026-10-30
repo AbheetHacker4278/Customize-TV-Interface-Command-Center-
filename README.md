@@ -60,6 +60,78 @@ Transform your television experience from an ad-bloated, sluggish stock dashboar
 
 ---
 
+## 🖥️ Smart TV Web Command Center Interface
+
+The Web Command Center (`http://localhost:5050` or accessible over local Wi-Fi from your smartphone/tablet) gives you full telemetry, bidirectional synchronization, and instant wireless control over your television.
+
+### 1. Live System Dashboard
+
+<div align="center">
+  <img src="docs/images/web-dashboard-overview.png" alt="Smart TV Web Command Center - System Dashboard" width="95%" />
+</div>
+
+* **Live TV Screen Mirror**: Real-time seekable screenshot mirroring of what is currently playing on the TV screen.
+* **Instant Telemetry Cards**:
+  * **Power State**: Real-time `AWAKE` or `STANDBY` detection via Android power wakefulness dumps.
+  * **Current Focus**: Displays currently focused Android activity (e.g. `Apple TV Clean Launcher`).
+  * **Active Input**: Identifies active HDMI source and 4K HDR pass-through status.
+  * **System Audio**: Volume percentage with Sony ARC / Internal speaker audio routing indicator.
+* **Quick Navigation D-Pad**: High-speed directional controls (`Up`, `Down`, `Left`, `Right`, `OK`, `Back`, `Home`, `Settings`).
+
+---
+
+### 2. Virtual Remote & Voice Assistant Engine
+
+<div align="center">
+  <img src="docs/images/web-virtual-remote.png" alt="Virtual Remote Control Interface" width="95%" />
+</div>
+
+* **Sub-50ms Key Injection**: Communicates over an open persistent TCP socket with the Python `adbDaemon` worker.
+* **Voice Assistant Injection**: Dedicated `Voice` button injecting native `KEYCODE_VOICE_ASSIST` (Keycode 231) to trigger Android TV voice search without physical remote access.
+* **Direct Text Typing**: Type search queries, URLs, passwords, or usernames directly from your PC/phone keyboard and send them to the TV's active text field.
+* **Media Transport Bar**: Play, Pause, Stop, Seek Rewind, and Fast-Forward controls.
+
+---
+
+### 3. Sony BRAVIA 4K Wallpaper Studio & Auto Screen Carousel
+
+<div align="center">
+  <img src="docs/images/web-wallpapers-carousel.png" alt="Wallpaper Studio and 5-Min Carousel Manager" width="95%" />
+</div>
+
+* **Auto Screen Carousel (5-Min Inactivity Screensaver)**:
+  * **5-Minute Idle Auto-Start**: Automatically triggers after 5 minutes of TV inactivity without remote clicks.
+  * **Smooth Faded Cross-Transitions**: Hardware-accelerated dual-alpha animation transitions images smoothly every 18 seconds without screen flicker or sudden cuts.
+  * **Strict 5-Image Maximum**: Sequence visualizer displaying `Slot #1` through `Slot #5` in real time.
+  * **Burn-In Guard**: Floating ambient gradient and moving clock protect OLED and LCD displays.
+  * **Instant Preview**: "Preview Carousel Now on TV" button to test the transition sequence immediately.
+* **Custom Wallpaper Upload from PC**: Upload any 4K photograph or digital artwork from your PC. Automatically optimized, pushed to the TV, and added to your persistent gallery.
+* **Remote Mic & Hardware Privacy**: Explains the physical push-to-talk isolation in Sony Bluetooth voice remotes, ensuring no background listening.
+
+---
+
+### 4. Installed TV Applications & Streaming Hub
+
+<div align="center">
+  <img src="docs/images/web-apps-streaming.png" alt="Installed TV Applications Manager" width="95%" />
+</div>
+
+* **Live App Detection**: Scans 3rd party Leanback applications and system media players.
+* **One-Click Launch & Close**: Instantly start or force-stop streaming apps (YouTube, Netflix, Prime Video, Disney+ Hotstar, JioCinema, MX Player TV, JioTV+, Web Browsers) from your web browser.
+
+---
+
+### 5. Input Source Selection (HDMI / AV)
+
+<div align="center">
+  <img src="docs/images/web-inputs-hdmi.png" alt="Input Source Selection" width="95%" />
+</div>
+
+* **Direct Hardware Switching**: Dedicated buttons for `HDMI 1`, `HDMI 2`, `HDMI 3`, `HDMI 4`, `AV Composite`, and the native Sony BRAVIA `Inputs Menu`.
+* Eliminates the need to cycle through sluggish on-screen source lists.
+
+---
+
 ## 🏗️ System Architecture
 
 ```mermaid
@@ -95,7 +167,7 @@ flowchart TD
 
 ---
 
-## ⚡ Core Features
+## ⚡ Core Features Breakdown
 
 ### 1. Web-Based Smart TV Control Center
 * **Instant Virtual Remote**: High-speed D-Pad, OK, Back, Home, Menu, Settings, Volume Up/Down/Mute, Power controls.
@@ -178,6 +250,16 @@ Customize-TV-Interface-Command-Center-/
 │   ├── adbDaemon.py            # High-speed persistent Python ADB daemon
 │   └── public/wallpapers/      # 4K Wallpaper presets & custom uploads
 ├── docs/images/                # UI screenshots, before/after captures
+│   ├── launcher-day-fuji.png
+│   ├── launcher-night-netflix.png
+│   ├── launcher-cleaner-dock.png
+│   ├── cache-cleaner-modal.png
+│   ├── cache-cleaner-guide.png
+│   ├── web-dashboard-overview.png
+│   ├── web-virtual-remote.png
+│   ├── web-wallpapers-carousel.png
+│   ├── web-apps-streaming.png
+│   └── web-inputs-hdmi.png
 ├── start_control_center.ps1    # One-click startup script
 └── README.md
 ```
