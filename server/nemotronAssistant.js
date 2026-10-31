@@ -479,13 +479,13 @@ Rules:
 /**
  * Synthesize speech via ElevenLabs REST API using custom Voice ID
  */
-export async function synthesizeElevenLabsSpeech(text) {
-  const apiKey = process.env.ELEVENLABS_API_KEY;
-  const voiceId = process.env.ELEVENLABS_VOICE_ID || 'ibbx9zDYGvLgtYzRbqqG';
+export async function synthesizeElevenLabsSpeech(text, targetVoiceId = null) {
+  const apiKey = process.env.ELEVENLABS_API_KEY || 'sk_6f18b2e6b3b5e1177a225e1796217a5915681d603763da82';
+  const voiceId = targetVoiceId || process.env.ELEVENLABS_VOICE_ID || 'ibbx9zDYGvLgtYzRbqqG';
   if (!apiKey) return null;
 
   try {
-    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+    let res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -504,11 +504,35 @@ export async function synthesizeElevenLabsSpeech(text) {
     if (res.ok) {
       const buffer = await res.arrayBuffer();
       return Buffer.from(buffer);
-    } else {
-      const err = await res.json().catch(() => ({}));
-      console.warn('[ElevenLabs Warning]:', err.detail?.message || `HTTP ${res.status}`);
-      return null;
     }
+
+    // If 402 payment required on library voice or error, auto-fallback to Jarvis George voice
+    if (voiceId !== 'JBFqnCBsd6RMkjVDRZzb') {
+      console.warn(`[ElevenLabs]: Voice ${voiceId} returned HTTP ${res.status}. Falling back to default Jarvis voice (JBFqnCBsd6RMkjVDRZzb)...`);
+      const fallbackRes = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'xi-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          text,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.8,
+          }
+        })
+      });
+      if (fallbackRes.ok) {
+        const buffer = await fallbackRes.arrayBuffer();
+        return Buffer.from(buffer);
+      }
+    }
+
+    const err = await res.json().catch(() => ({}));
+    console.warn('[ElevenLabs Warning]:', err.detail?.message || `HTTP ${res.status}`);
+    return null;
   } catch (e) {
     console.warn('[ElevenLabs Error]:', e.message);
     return null;

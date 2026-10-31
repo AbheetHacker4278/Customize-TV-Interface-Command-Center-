@@ -698,10 +698,13 @@ app.post('/api/assistant/chat', async (req, res) => {
     });
 
     logAction('AI Assistant', 'Voice Query Processed', `User: "${message}" -> AI: "${result.reply}"`);
+    const hostIp = getHostIp();
+    const ttsUrl = `http://${hostIp}:${PORT}/api/assistant/tts?text=${encodeURIComponent(result.reply)}`;
     res.json({
       success: true,
       reply: result.reply,
-      toolExecuted: result.toolExecuted
+      toolExecuted: result.toolExecuted,
+      ttsUrl
     });
   } catch (err) {
     console.error('AI Assistant API Error:', err);
@@ -710,6 +713,41 @@ app.post('/api/assistant/chat', async (req, res) => {
       error: err.message || 'Error processing AI query',
       reply: "I am having trouble connecting to NVIDIA Nemotron right now. Please verify network access."
     });
+  }
+});
+
+app.get('/api/assistant/openjarvis/status', (req, res) => {
+  res.json({
+    success: true,
+    name: 'OpenJarvis AI Assistant',
+    version: '1.0.5',
+    engine: 'NVIDIA Nemotron 120B (NIM)',
+    model: 'nvidia/nemotron-3.5-super-vl-120b-a12b',
+    tts: {
+      backend: 'elevenlabs',
+      preferredVoiceId: 'ibbx9zDYGvLgtYzRbqqG',
+      voiceName: 'Bunty (Smart Friendly Assistant)',
+      fallbackVoiceId: 'JBFqnCBsd6RMkjVDRZzb',
+      fallbackVoiceName: 'George (Warm British Jarvis)'
+    },
+    tvMode: 'Pure Voice Only'
+  });
+});
+
+app.get('/api/assistant/tts', async (req, res) => {
+  const text = req.query.text;
+  if (!text) return res.status(400).send('Text required');
+  try {
+    const audioBuffer = await synthesizeElevenLabsSpeech(text);
+    if (audioBuffer) {
+      res.setHeader('Content-Type', 'audio/mpeg');
+      res.setHeader('Content-Length', audioBuffer.length);
+      res.send(audioBuffer);
+    } else {
+      res.status(502).send('TTS synthesis failed');
+    }
+  } catch (err) {
+    res.status(500).send(err.message);
   }
 });
 

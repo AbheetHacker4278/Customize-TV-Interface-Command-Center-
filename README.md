@@ -281,14 +281,31 @@ node server.js
 
 ---
 
-## 🔮 AI Voice Assistant for Smart TV (NVIDIA Nemotron 120B)
+## 🔮 OpenJarvis AI Voice Assistant & ElevenLabs Neural Audio
 
-Integrated Siri-style glowing orb conversational intelligence directly on your Smart TV and in the Web Command Center, powered by the cutting-edge **NVIDIA Nemotron** model (`nvidia/nemotron-3.5-super-vl-120b-a12b`).
+Integrated **OpenJarvis** ([open-jarvis/OpenJarvis](https://github.com/open-jarvis/OpenJarvis.git)) and **ElevenLabs Neural Speech** directly into the Smart TV and Web Command Center, powered by **NVIDIA Nemotron 120B** (`nvidia/nemotron-3.5-super-vl-120b-a12b`).
 
 <div align="center">
-  <img src="docs/images/siri_assistant_live.png" alt="Siri-Style AI Voice Assistant running on Sony BRAVIA TV" width="90%" />
-  <p><em>Live Sony BRAVIA 4K TV Screen: Centered Siri-style dynamic glowing orb, real-time voice speech transcription, status pill, and remote controls.</em></p>
+  <img src="docs/images/tv_pure_voice_mode.png" alt="Pure Voice Mode on Sony BRAVIA TV" width="90%" />
+  <p><em>Sony BRAVIA 4K TV Screen in <strong>Pure Voice Mode</strong>: Clean distraction-free HUD, auto-listening without buttons, dynamic Siri-style glowing orb, and ElevenLabs neural audio streaming.</em></p>
 </div>
+
+<br/>
+
+### Pure Voice Mode on TV
+1. **100% Hands-Free Activation**:
+   * Opens instantly by double-pressing the remote mic button or clicking the top-bar **[ 🎤 Voice ]** pill.
+   * Starts listening immediately upon launch — no need to navigate or press any on-screen buttons.
+2. **ElevenLabs Neural Audio Streaming**:
+   * Streams high-fidelity neural audio over HTTP directly into the TV's `android.media.MediaPlayer` using voice ID `ibbx9zDYGvLgtYzRbqqG` (Bunty) with seamless fallback to `JBFqnCBsd6RMkjVDRZzb` (Jarvis George).
+3. **Continuous Conversation Loop**:
+   * When OpenJarvis finishes speaking, it automatically transitions back to listening for continuous natural dialogue.
+   * Say *"Exit"*, *"Close"*, or press Back on your remote to dismiss.
+4. **Autonomous Streaming & Media Deep Linking**:
+   * *"Play Brahmastra on Hotstar"* ➔ Deep links directly into Disney+ Hotstar and starts playback.
+   * *"Play Interstellar trailer on YouTube"* ➔ Opens YouTube directly to the video.
+   * *"Watch Stranger Things on Netflix"* ➔ Launches Netflix to the series page.
+   * Automatically yields screen to the movie in fullscreen after spoken confirmation.
 
 <br/>
 

@@ -23,7 +23,7 @@ export default function AssistantView({ tvConnected, targetIp }) {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: "Hello! I am your Smart TV AI Assistant powered by NVIDIA Nemotron. You can speak to me or type commands to control your Sony BRAVIA TV, launch apps, manage volume, or customize settings.",
+      content: "Hello! I am OpenJarvis, your voice AI assistant powered by NVIDIA Nemotron 120B and ElevenLabs neural speech. You can speak or type commands to control your Sony BRAVIA TV, play movies on Hotstar & YouTube, adjust volume, or customize settings.",
       toolExecuted: null,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
@@ -39,6 +39,7 @@ export default function AssistantView({ tvConnected, targetIp }) {
 
   const recognitionRef = useRef(null);
   const chatBottomRef = useRef(null);
+  const currentAudioRef = useRef(null);
 
   // Quick Action Chips
   const quickActions = [
@@ -126,10 +127,43 @@ export default function AssistantView({ tvConnected, targetIp }) {
     }
   };
 
-  // Speak AI response via Web Speech Synthesis
-  const speakText = (text) => {
-    if (!voiceOutputEnabled || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
+  // Speak AI response via ElevenLabs Neural Audio with Web Speech fallback
+  const speakText = (text, ttsUrl = null) => {
+    if (!voiceOutputEnabled) return;
+
+    if (currentAudioRef.current) {
+      try {
+        currentAudioRef.current.pause();
+        currentAudioRef.current = null;
+      } catch (e) {}
+    }
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+
+    if (ttsUrl) {
+      const audio = new Audio(ttsUrl);
+      currentAudioRef.current = audio;
+      setIsSpeaking(true);
+      audio.onplay = () => setIsSpeaking(true);
+      audio.onended = () => {
+        setIsSpeaking(false);
+        currentAudioRef.current = null;
+      };
+      audio.onerror = () => {
+        fallbackWebSpeech(text);
+      };
+      audio.play().catch(() => fallbackWebSpeech(text));
+    } else {
+      fallbackWebSpeech(text);
+    }
+  };
+
+  const fallbackWebSpeech = (text) => {
+    if (!voiceOutputEnabled || !window.speechSynthesis) {
+      setIsSpeaking(false);
+      return;
+    }
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.05;
     utterance.pitch = 1.0;
@@ -137,6 +171,11 @@ export default function AssistantView({ tvConnected, targetIp }) {
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
+  };
+
+  const testElevenLabsVoice = () => {
+    const testMsg = "Greetings! Open Jarvis is active with ElevenLabs neural voice and pure voice mode on your Smart TV.";
+    speakText(testMsg, `/api/assistant/tts?text=${encodeURIComponent(testMsg)}`);
   };
 
   // Send message to Nemotron Assistant API
@@ -178,7 +217,7 @@ export default function AssistantView({ tvConnected, targetIp }) {
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
         setMessages(prev => [...prev, replyMsg]);
-        speakText(res.reply);
+        speakText(res.reply, res.ttsUrl);
       } else {
         const errorMsg = {
           role: 'assistant',
@@ -242,18 +281,33 @@ export default function AssistantView({ tvConnected, targetIp }) {
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className="text-lg font-bold text-white tracking-wide">Sony BRAVIA AI Voice Assistant</h1>
+              <h1 className="text-lg font-bold text-white tracking-wide">OpenJarvis AI Voice Studio</h1>
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                OpenJarvis v1.0.5
+              </span>
               <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                 NVIDIA Nemotron 120B
               </span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                ElevenLabs Neural Voice
+              </span>
             </div>
             <p className="text-xs text-slate-400 mt-0.5">
-              Natural voice control & streaming tool execution for Sony BRAVIA 4K ({targetIp})
+              Pure voice assistant running on Sony BRAVIA 4K ({targetIp}) • Voice ID: <code className="text-indigo-300 font-mono">ibbx9zDYGvLgtYzRbqqG</code> (Auto Fallback: Jarvis George)
             </p>
           </div>
         </div>
 
         <div className="flex items-center space-x-3">
+          <button
+            onClick={testElevenLabsVoice}
+            className="flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium border border-purple-500/40 bg-purple-500/20 text-purple-200 hover:bg-purple-500/30 transition-all active:scale-95 shadow-md"
+            title="Test ElevenLabs voice playback in browser"
+          >
+            <Play className="w-3.5 h-3.5 text-purple-300" />
+            <span>Test 11Labs Voice</span>
+          </button>
+
           <button
             onClick={() => setVoiceOutputEnabled(!voiceOutputEnabled)}
             className={`flex items-center space-x-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
@@ -272,7 +326,7 @@ export default function AssistantView({ tvConnected, targetIp }) {
             className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-cyan-500/20 transition-all active:scale-95 disabled:opacity-50"
           >
             <Tv className="w-4 h-4" />
-            <span>{tvTriggering ? 'Summoning on TV...' : 'Open Assistant on TV'}</span>
+            <span>{tvTriggering ? 'Opening TV Voice Mode...' : 'Open Pure Voice Mode on TV'}</span>
           </button>
         </div>
       </div>
