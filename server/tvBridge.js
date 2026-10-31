@@ -450,8 +450,9 @@ export async function updateTvHomeClock(tvIp, homeClockConfig) {
 
   try { fs.unlinkSync(tempPath); } catch (e) {}
 
-  // 4. Force restart the Home Screen so changes take effect immediately
-  await execTvShell(tvIp, 'am force-stop com.gathin.tvhome; am start -n com.gathin.tvhome/.MainActivity');
+  // 4. Update theme revision and force restart the Home Screen so changes take effect immediately
+  const rev = String(Date.now());
+  await execTvShell(tvIp, `echo ${rev} > /sdcard/Android/data/com.gathin.tvhome/files/theme_revision; am force-stop com.gathin.tvhome; am start -a android.intent.action.MAIN -c android.intent.category.HOME`);
   return { success: true, home_clock: homeClockConfig };
 }
 
