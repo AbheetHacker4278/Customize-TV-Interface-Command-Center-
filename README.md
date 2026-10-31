@@ -196,6 +196,22 @@ flowchart TD
 * Record notes, calls, or conversations through your browser microphone.
 * Recordings are permanently stored on your local PC in `recordings/` and logged in an SQLite database with an integrated HTML5 web player.
 
+### 6. Custom Clock Face Studio & TV Browser Integration
+* **7 Distinct Clock Styles**:
+  * **Minimal Digital Clock**: Ultra-clean, thin typography with subtle live date.
+  * **Swiss Analog Chronograph**: High-precision vector dials with smooth second sweep, customizable hands, and markers (ticks, dots, arabic numbers, roman numerals).
+  * **Retro Split-Flap**: Mechanical split-flap cards with textured 3D perspective fold.
+  * **Modern Digital Clock**: Glassmorphic dock pill with gradient typography and high legibility.
+  * **Futuristic / Neon Clock**: Cyberpunk chromatic glowing text, secondary accent glow, and cathode scanlines.
+  * **Minimal Typography Clock**: Editorial luxury serif aesthetic (*Cinzel / Playfair Display*).
+  * **Date & Time Dashboard**: Frosted glass widgets with calendar badges and live TV connection telemetry.
+* **Pixel-Perfect TV Synchronization**:
+  * Renders natively in the existing TV Browser App at `http://<HOST_IP>:5050/tv-clock` without installing extra APKs.
+  * **Sub-50ms Live Sync**: Updates instantly over Socket.IO when customized in the Web Studio.
+  * **Offline Persistence**: Caches configuration in `localStorage` and SQLite, automatically restoring upon TV reboot or browser reopen.
+  * **OLED Anti-Burn-In Protection**: Sub-pixel drift shifts coordinates by $\pm 2$px every 60 seconds.
+* **Full Studio Controls**: Typography (8 Google Fonts), weights (300–900), size sliders, solid/gradient colors, neon glow, element toggles (seconds, AM/PM, 12h/24h, date formats), analog markers/hands tuning, custom 4K wallpaper uploads, and backdrop blur.
+
 ---
 
 ## 🚀 Quickstart Guide
@@ -238,6 +254,8 @@ Customize-TV-Interface-Command-Center-/
 ├── client/                     # React 18 + TailwindCSS Frontend
 │   ├── src/
 │   │   ├── App.jsx             # Unified Web Dashboard & Navigation
+│   │   ├── ClockFaceStudio.jsx # 3-Column Custom Clock Face Studio
+│   │   ├── ClockFaceRenderer.jsx # Pixel-perfect SVG & CSS Clock Renderer
 │   │   ├── api.js              # Socket.IO & REST API client
 │   │   └── main.jsx
 │   ├── dist/                   # Production build assets
@@ -246,8 +264,9 @@ Customize-TV-Interface-Command-Center-/
 │   ├── server.js               # REST APIs & Socket.IO realtime server
 │   ├── tvBridge.js             # High-speed persistent daemon client bridge
 │   ├── tvService.js            # TV status monitor & state polling
-│   ├── db.js                   # SQLite database (settings, logs, recordings)
+│   ├── db.js                   # SQLite database (settings, logs, clock_faces)
 │   ├── adbDaemon.py            # High-speed persistent Python ADB daemon
+│   ├── public/tv-clock/        # Dedicated Standalone TV Browser Clock App
 │   └── public/wallpapers/      # 4K Wallpaper presets & custom uploads
 ├── docs/images/                # UI screenshots, before/after captures
 │   ├── launcher-day-fuji.png
