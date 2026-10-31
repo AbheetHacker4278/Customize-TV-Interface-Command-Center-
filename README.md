@@ -110,7 +110,41 @@ The Web Command Center (`http://localhost:5050` or accessible over local Wi-Fi f
 
 ---
 
-### 4. Installed TV Applications & Streaming Hub
+### 4. TV Home Screen Clock Face Studio (Native Launcher Integration)
+
+<div align="center">
+  <img src="docs/images/tv_home_clock_cyan_live.png" alt="Custom Top-Left Clock Live on TV Home Screen" width="95%" />
+  <p><em>Real live capture from Sony BRAVIA 4K: Top-left clock customized with Apple TV Sky Cyan linear gradient shaders, custom typography, date styling, and ambient weather pill.</em></p>
+</div>
+
+* **No Browser App Required**: Directly customizes the native top-left clock on the Android TV Home Screen (`com.gathin.tvhome`).
+* **Interactive Live TV Preview**: A real-time web simulator replicating the exact Sony TV home screen layout (clock, weather greeting, date, top action bar, focused dock app title, floating glass dock).
+* **Curated Visual Themes**:
+  * *Apple TV Sky Cyan* (Smooth 3-stop linear gradient shader)
+  * *Golden Amber Sunset* (Warm sunset gold gradient)
+  * *Minimal Platinum White* (Clean high-contrast minimalism)
+  * *Cyberpunk Neon Glow* (High-saturation cyan/magenta with neon glow shadows)
+  * *Emerald Aurora Mint* (Lush Nordic aurora borealis)
+  * *Ruby Crimson Fire* (Vibrant scarlet fire gradient)
+  * *Amethyst Royal Purple* (Deep royal violet)
+  * *Monospace Tech Matrix* (Terminal font styling)
+  * *Classical Roman Serif* (Elegant serif typography)
+* **Granular Typography & Layout Controls**:
+  * Real-time SP sizing slider (40sp to 90sp).
+  * System Typefaces (Light, Medium, Bold, Monospace, Serif).
+  * 3-Stop Linear Gradient Shaders (`colorTop`, `colorMid`, `colorBottom`) rendered natively in Android canvas.
+  * Drop shadow color and blur radius.
+  * Seconds display toggle (`HH:mm:ss`), 12h / 24h format switcher.
+  * Date display toggle and custom date color (`dateColor`).
+  * Greeting / Weather row toggle (`showGreeting`).
+* **Sub-Second Native TV Apply**:
+  * Pushes persistent JSON configuration directly to `/sdcard/Android/data/com.gathin.tvhome/files/config.json`.
+  * Restarts launcher seamlessly in under 300ms without leaving the TV Home screen.
+  * Retains applied design across TV reboots and power cycles.
+
+---
+
+### 5. Installed TV Applications & Streaming Hub
 
 <div align="center">
   <img src="docs/images/web-apps-streaming.png" alt="Installed TV Applications Manager" width="95%" />

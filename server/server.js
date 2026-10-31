@@ -24,7 +24,7 @@ import {
   getActiveClockFace,
   setActiveClockFace
 } from './db.js';
-import { captureTvScreenshot, execTvShell } from './tvBridge.js';
+import { captureTvScreenshot, execTvShell, updateTvHomeClock } from './tvBridge.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -584,6 +584,36 @@ app.post('/api/clock-faces/upload-bg', authMiddleware, (req, res) => {
     const dest = path.join(wallpapersDir, safeName);
     fs.writeFileSync(dest, buffer);
     res.json({ success: true, url: `/wallpapers/${safeName}`, filename: safeName });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ---------------- TV Home Screen Clock (Top-Left) Routes ----------------
+app.get('/api/home-clock', authMiddleware, async (req, res) => {
+  try {
+    const saved = readSetting('home_clock_config', null);
+    if (saved) {
+      return res.json({ success: true, homeClock: JSON.parse(saved) });
+    }
+    const raw = await execTvShell(tvService.targetIp, 'cat /sdcard/Android/data/com.gathin.tvhome/files/config.json');
+    let parsed = {};
+    try { parsed = JSON.parse(raw); } catch(e){}
+    res.json({ success: true, homeClock: parsed.home_clock || null });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/home-clock/apply', authMiddleware, async (req, res) => {
+  const { clockConfig } = req.body;
+  if (!clockConfig) return res.status(400).json({ error: 'clockConfig is required' });
+
+  try {
+    saveSetting('home_clock_config', JSON.stringify(clockConfig));
+    const result = await updateTvHomeClock(tvService.targetIp, clockConfig);
+    logAction('Home Clock', 'Applied Clock to TV Home Screen', `${clockConfig.style || 'Custom'} (${clockConfig.size || 58}sp)`);
+    res.json({ success: true, result });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
