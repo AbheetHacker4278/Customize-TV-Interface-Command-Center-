@@ -475,3 +475,42 @@ Rules:
     throw err;
   }
 }
+
+/**
+ * Synthesize speech via ElevenLabs REST API using custom Voice ID
+ */
+export async function synthesizeElevenLabsSpeech(text) {
+  const apiKey = process.env.ELEVENLABS_API_KEY;
+  const voiceId = process.env.ELEVENLABS_VOICE_ID || 'ibbx9zDYGvLgtYzRbqqG';
+  if (!apiKey) return null;
+
+  try {
+    const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'xi-api-key': apiKey,
+      },
+      body: JSON.stringify({
+        text,
+        model_id: process.env.ELEVENLABS_MODEL || 'eleven_multilingual_v2',
+        voice_settings: {
+          stability: 0.5,
+          similarity_boost: 0.8,
+        }
+      })
+    });
+
+    if (res.ok) {
+      const buffer = await res.arrayBuffer();
+      return Buffer.from(buffer);
+    } else {
+      const err = await res.json().catch(() => ({}));
+      console.warn('[ElevenLabs Warning]:', err.detail?.message || `HTTP ${res.status}`);
+      return null;
+    }
+  } catch (e) {
+    console.warn('[ElevenLabs Error]:', e.message);
+    return null;
+  }
+}

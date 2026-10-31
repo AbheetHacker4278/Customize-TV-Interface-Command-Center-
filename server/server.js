@@ -25,7 +25,7 @@ import {
   setActiveClockFace
 } from './db.js';
 import { captureTvScreenshot, execTvShell, updateTvHomeClock } from './tvBridge.js';
-import { handleAssistantQuery, executeAssistantTool } from './nemotronAssistant.js';
+import { handleAssistantQuery, executeAssistantTool, synthesizeElevenLabsSpeech } from './nemotronAssistant.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -720,6 +720,22 @@ app.post('/api/assistant/trigger', async (req, res) => {
     res.json({ success: true, message: 'AI Voice Assistant opened on Sony TV' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post('/api/assistant/elevenlabs', async (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: 'Text required' });
+  const audioBuffer = await synthesizeElevenLabsSpeech(text);
+  if (audioBuffer) {
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.send(audioBuffer);
+  } else {
+    res.status(403).json({ 
+      success: false, 
+      fallback: true,
+      message: 'ElevenLabs API key missing text_to_speech permission. Using system speech synthesis fallback.' 
+    });
   }
 });
 
