@@ -292,9 +292,29 @@ Integrated Siri-style glowing orb conversational intelligence directly on your S
 
 <br/>
 
+### Home Screen Top-Right Voice Assistant Button
+
+Access the AI Voice Assistant directly from your Home screen navigation bar:
+
+<div align="center">
+  <img src="docs/images/home_with_voice_pill.png" alt="Home Screen Top-Right Voice Assistant Pill" width="90%" />
+  <p><em>Home Screen Top Bar: Dedicated <strong>[ 🎤 Voice ]</strong> pill situated right next to Inputs, Wi-Fi, and Settings. Simply navigate up with the remote D-pad and press OK.</em></p>
+</div>
+
+<br/>
+
 ### Key Highlights
 
-1. **Remote Mic Double-Press Activation**:
+1. **Top-Right Home Bar & Remote Double-Press Activation**:
+   * **On-Screen Pill:** Dedicated glassmorphic **[ 🎤 Voice ]** button on the top right next to Inputs, Wi-Fi, and Settings.
+   * **Remote Mic Double-Press:** Activated instantly by pressing the remote microphone button twice (`<= 600ms`). Single presses are consumed to prevent unintended overlay popups.
+2. **Instant Movie & Streaming Playback via Voice Commands**:
+   * Users can ask to play or watch any content across any streaming platform:
+     * *"Play Brahmastra on Hotstar"* ➔ Deep links directly into Disney+ Hotstar and starts content.
+     * *"Play Interstellar trailer on YouTube"* ➔ Opens YouTube directly to the search and video playback.
+     * *"Watch Stranger Things on Netflix"* ➔ Launches Netflix to the series title page.
+     * *"Play Hanuman movie"* ➔ Automatically resolves and starts playback.
+
    * Activated instantly when the user **presses the microphone button on the TV remote twice** (double-press window `<= 600ms`).
    * Single press passes through or is ignored, completely avoiding false-positive interruptions and stock assistant overlays.
 2. **Dynamic 4-State Visual Orb Animation**:

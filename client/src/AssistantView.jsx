@@ -42,10 +42,12 @@ export default function AssistantView({ tvConnected, targetIp }) {
 
   // Quick Action Chips
   const quickActions = [
-    { label: "Open YouTube", query: "Open YouTube on my TV" },
+    { label: "Play on Hotstar", query: "Play Brahmastra on Hotstar" },
+    { label: "Play on YouTube", query: "Play Interstellar trailer on YouTube" },
+    { label: "Watch on Netflix", query: "Watch Stranger Things on Netflix" },
     { label: "Set Volume to 25", query: "Set TV volume to 25%" },
     { label: "Clear TV Cache", query: "Clear application cache and optimize memory" },
-    { label: "Open Netflix", query: "Open Netflix" },
+    { label: "Open YouTube", query: "Open YouTube on my TV" },
     { label: "Switch to HDMI 1", query: "Switch input to HDMI 1" },
     { label: "Turn Off Screen", query: "Turn off the TV screen" },
     { label: "Change Wallpaper", query: "Change the home screen wallpaper" },

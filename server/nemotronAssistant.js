@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import OpenAI from 'openai';
 import { tvService } from './tvService.js';
-import { pushTvWallpaper } from './tvBridge.js';
+import { pushTvWallpaper, execTvShell } from './tvBridge.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -18,6 +18,28 @@ const openai = new OpenAI({
 });
 
 export const TV_ASSISTANT_TOOLS = [
+  {
+    type: 'function',
+    function: {
+      name: 'play_media_content',
+      description: 'Search for and immediately play/launch any movie, TV show, series, music video, trailer, or song on streaming apps (Disney+ Hotstar, YouTube, Netflix, Prime Video, JioCinema, MX Player) or universal TV search. Use this whenever the user asks to play, watch, search, or start specific content.',
+      parameters: {
+        type: 'object',
+        properties: {
+          title: {
+            type: 'string',
+            description: 'Name of the movie, video, series, or content to play (e.g. "Interstellar", "Brahmastra", "Stranger Things", "Lofi Girl", "Hanuman", "Animal")'
+          },
+          platform: {
+            type: 'string',
+            enum: ['YouTube', 'Hotstar', 'Netflix', 'Prime Video', 'JioCinema', 'MX Player', 'auto'],
+            description: 'The streaming service to play on. If user does not specify one, choose the best platform or "auto".'
+          }
+        },
+        required: ['title']
+      }
+    }
+  },
   {
     type: 'function',
     function: {
@@ -188,6 +210,32 @@ export async function executeAssistantTool(name, args = {}) {
   console.log(`[Assistant Tool Call] ${name}:`, args);
 
   switch (name) {
+    case 'play_media_content': {
+      const title = args.title || '';
+      const platform = (args.platform || 'auto').toLowerCase();
+      const encoded = encodeURIComponent(title);
+
+      if (platform.includes('hotstar')) {
+        await execTvShell(tvService.targetIp, `am start -a android.intent.action.VIEW -d "hotstar://search?q=${encoded}" in.startv.hotstar`);
+        return { success: true, platform: 'Hotstar', title, message: `Playing "${title}" on Disney+ Hotstar` };
+      } else if (platform.includes('netflix')) {
+        await execTvShell(tvService.targetIp, `am start -a android.intent.action.VIEW -d "nflx://www.netflix.com/search?q=${encoded}" com.netflix.ninja || am start -a android.intent.action.SEARCH -e query "${title}"`);
+        return { success: true, platform: 'Netflix', title, message: `Searching for "${title}" on Netflix` };
+      } else if (platform.includes('prime')) {
+        await execTvShell(tvService.targetIp, `am start -a android.intent.action.SEARCH -e query "${title}" -p com.amazon.amazonvideo.livingroom || am start -a android.intent.action.SEARCH -e query "${title}"`);
+        return { success: true, platform: 'Prime Video', title, message: `Playing "${title}" on Prime Video` };
+      } else if (platform.includes('jiocinema') || platform.includes('jio')) {
+        await execTvShell(tvService.targetIp, `am start -a android.intent.action.VIEW -d "jiocinema://search?query=${encoded}" com.jio.media.stb.ondemand`);
+        return { success: true, platform: 'JioCinema', title, message: `Playing "${title}" on JioCinema` };
+      } else if (platform.includes('mx player') || platform.includes('mxplayer')) {
+        await execTvShell(tvService.targetIp, `am start -a android.intent.action.SEARCH -e query "${title}" -p com.mxtech.videoplayer.television`);
+        return { success: true, platform: 'MX Player', title, message: `Searching for "${title}" on MX Player` };
+      } else {
+        await execTvShell(tvService.targetIp, `am start -a android.intent.action.VIEW -d "https://www.youtube.com/results?search_query=${encoded}" com.google.android.youtube.tv`);
+        return { success: true, platform: 'YouTube', title, message: `Playing "${title}" on YouTube` };
+      }
+    }
+
     case 'open_app': {
       const appName = args.app_name || '';
       const lower = appName.toLowerCase();
@@ -331,6 +379,7 @@ Current TV State:
 Rules:
 1. Keep spoken responses concise and natural (1 to 2 short sentences), crafted for audio playback on a TV.
 2. When the user asks to perform an action (open YouTube, change volume, turn off screen, clean cache, change wallpaper, switch HDMI), CALL THE APPROPRIATE TOOL immediately.
+3. When the user asks to play, watch, or search for any movie, video, trailer, song, or series (e.g. "Play Interstellar on YouTube", "Open Brahmastra on Hotstar", "Watch Stranger Things on Netflix", "Play Animal"), CALL play_media_content immediately.
 3. Confirm actions warmly and cleanly, e.g. "Opening YouTube for you now.", "Volume set to 25%.", "Cleaning the TV cache."
 4. If asked who you are, state that you are the TV's AI Voice Assistant powered by NVIDIA Nemotron.`
   };
@@ -351,18 +400,36 @@ Rules:
     const choice = completion.choices[0];
     const message = choice?.message;
 
-    // Check if Nemotron called tools
-    if (message?.tool_calls && message.tool_calls.length > 0) {
-      const toolCall = message.tool_calls[0];
-      const fnName = toolCall.function.name;
-      let fnArgs = {};
+    // Check if Nemotron called tools (either via OpenAI tool_calls or inline <tool_call> tokens)
+    let toolCall = message?.tool_calls?.[0];
+    let fnName = toolCall?.function?.name;
+    let fnArgs = {};
+
+    if (toolCall) {
       try { fnArgs = JSON.parse(toolCall.function.arguments || '{}'); } catch(e){}
+    } else if (message?.content && message.content.includes('<tool_call>')) {
+      const raw = message.content;
+      const fnMatch = raw.match(/<function=([^>]+)>/);
+      if (fnMatch) {
+        fnName = fnMatch[1].trim();
+        if (fnName === 'search_content') fnName = 'play_media_content';
+        const paramRegex = /<parameter=([^>]+)>\s*([^<]+)\s*<\/parameter>/g;
+        let m;
+        while ((m = paramRegex.exec(raw)) !== null) {
+          fnArgs[m[1].trim()] = m[2].trim();
+        }
+        if (fnArgs.query && !fnArgs.title) fnArgs.title = fnArgs.query;
+        if (fnArgs.app_name && !fnArgs.platform) fnArgs.platform = fnArgs.app_name;
+      }
+    }
+
+    if (fnName) {
 
       if (onToolExecute) onToolExecute({ name: fnName, args: fnArgs });
       const toolResult = await executeAssistantTool(fnName, fnArgs);
 
       // Now query Nemotron with tool output to get the natural spoken response
-      const followUpMessages = [
+      const followUpMessages = toolCall ? [
         ...fullMessages,
         message,
         {
@@ -370,6 +437,10 @@ Rules:
           tool_call_id: toolCall.id,
           content: JSON.stringify(toolResult)
         }
+      ] : [
+        ...fullMessages,
+        { role: 'assistant', content: `[Executed ${fnName}]: ${toolResult.message}` },
+        { role: 'user', content: 'Give a friendly one-sentence confirmation to the user that the action was performed.' }
       ];
 
       const stream = await openai.chat.completions.create({
