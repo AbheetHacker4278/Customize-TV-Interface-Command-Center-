@@ -25,6 +25,7 @@ import {
   setActiveClockFace
 } from './db.js';
 import { captureTvScreenshot, execTvShell, updateTvHomeClock } from './tvBridge.js';
+import { handleAssistantQuery, executeAssistantTool } from './nemotronAssistant.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -666,6 +667,57 @@ app.post('/api/terminal/exec', authMiddleware, async (req, res) => {
     logAction('Terminal', 'Custom ADB Shell', command);
     const output = await execTvShell(tvService.targetIp, command, 8000);
     res.json({ success: true, output });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ---------------- AI Voice Assistant (NVIDIA Nemotron) ----------------
+app.post('/api/assistant/chat', async (req, res) => {
+  const { message, history = [] } = req.body;
+  if (!message || typeof message !== 'string') {
+    return res.status(400).json({ success: false, error: 'Query message required' });
+  }
+
+  try {
+    const formattedHistory = history.map(h => ({
+      role: h.role === 'assistant' ? 'assistant' : 'user',
+      content: String(h.content || '')
+    }));
+    formattedHistory.push({ role: 'user', content: message });
+
+    const result = await handleAssistantQuery({
+      messages: formattedHistory,
+      onDelta: (delta) => {
+        io.emit('assistant_delta', { delta });
+      },
+      onToolExecute: (tool) => {
+        io.emit('assistant_tool', tool);
+        logAction('AI Assistant', `Tool Executed: ${tool.name}`, JSON.stringify(tool.args || {}));
+      }
+    });
+
+    logAction('AI Assistant', 'Voice Query Processed', `User: "${message}" -> AI: "${result.reply}"`);
+    res.json({
+      success: true,
+      reply: result.reply,
+      toolExecuted: result.toolExecuted
+    });
+  } catch (err) {
+    console.error('AI Assistant API Error:', err);
+    res.status(500).json({
+      success: false,
+      error: err.message || 'Error processing AI query',
+      reply: "I am having trouble connecting to NVIDIA Nemotron right now. Please verify network access."
+    });
+  }
+});
+
+app.post('/api/assistant/trigger', async (req, res) => {
+  try {
+    await execTvShell(tvService.targetIp, 'am start -n com.gathin.tvhome/.AssistantActivity');
+    logAction('AI Assistant', 'Assistant Summoned', 'Triggered from Web Command Center');
+    res.json({ success: true, message: 'AI Voice Assistant opened on Sony TV' });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

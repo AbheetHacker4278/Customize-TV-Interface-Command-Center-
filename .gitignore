@@ -20,6 +20,9 @@ recordings/*
 !recordings/.gitkeep
 
 # System & OS
+.env
+*.env
+server/.env
 .DS_Store
 Thumbs.db
 *.log

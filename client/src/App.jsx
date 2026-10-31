@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { socket, apiRequest } from './api';
 import ClockFaceStudio from './ClockFaceStudio';
+import AssistantView from './AssistantView';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('tv_dashboard_token') || '');
@@ -613,6 +614,7 @@ export default function App() {
           {[
             { id: 'dashboard', label: 'Dashboard', icon: Activity },
             { id: 'remote', label: 'Virtual Remote', icon: Tv },
+            { id: 'assistant', label: 'AI Voice Assistant', icon: Sparkles },
             { id: 'clockfaces', label: 'Clock Face Studio', icon: Clock },
             { id: 'wallpapers', label: 'Wallpapers & Carousel', icon: Image },
             { id: 'recordings', label: 'Audio & Recordings', icon: Mic },
@@ -871,6 +873,11 @@ export default function App() {
                 </div>
               )}
             </div>
+          )}
+
+          {/* TAB: AI VOICE ASSISTANT */}
+          {activeTab === 'assistant' && (
+            <AssistantView tvConnected={tvConnected} targetIp={deviceInfo.ip} />
           )}
 
           {/* TAB 2: VIRTUAL REMOTE */}

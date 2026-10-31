@@ -281,6 +281,44 @@ node server.js
 
 ---
 
+## 🔮 AI Voice Assistant for Smart TV (NVIDIA Nemotron 120B)
+
+Integrated Siri-style glowing orb conversational intelligence directly on your Smart TV and in the Web Command Center, powered by the cutting-edge **NVIDIA Nemotron** model (`nvidia/nemotron-3.5-super-vl-120b-a12b`).
+
+<div align="center">
+  <img src="docs/images/siri_assistant_live.png" alt="Siri-Style AI Voice Assistant running on Sony BRAVIA TV" width="90%" />
+  <p><em>Live Sony BRAVIA 4K TV Screen: Centered Siri-style dynamic glowing orb, real-time voice speech transcription, status pill, and remote controls.</em></p>
+</div>
+
+<br/>
+
+### Key Highlights
+
+1. **Remote Mic Double-Press Activation**:
+   * Activated instantly when the user **presses the microphone button on the TV remote twice** (double-press window `<= 600ms`).
+   * Single press passes through or is ignored, completely avoiding false-positive interruptions and stock assistant overlays.
+2. **Dynamic 4-State Visual Orb Animation**:
+   * **Listening:** Glowing orb pulses reactively to voice audio levels in real time.
+   * **Thinking:** 360-degree continuous rotation shimmer with fluid light expansion.
+   * **Speaking:** Dynamic wave scaling synchronized with Text-To-Speech (TTS) audio output.
+   * **Idle:** Gentle, organic breathing pulsation on pitch-black OLED background.
+3. **Smart TV Function Calling & Autonomous Tool Execution**:
+   * Nemotron autonomously converts natural voice intents into executable TV actions:
+     * *"Open YouTube"* ➔ Dispatches `open_app(YouTube)`.
+     * *"Set volume to 25%"* ➔ Dispatches `set_volume(25)`.
+     * *"Turn off the screen"* ➔ Dispatches `screen_power(sleep)`.
+     * *"Switch to HDMI 1"* ➔ Dispatches `switch_input(HDMI 1)`.
+     * *"Clean application cache"* ➔ Clears cache and frees TV RAM safely.
+     * *"Change the wallpaper"* ➔ Cycles home screen 4K wallpaper.
+4. **Natural Continuous Voice Conversations**:
+   * Speech-to-Text (STT) records voice queries on the TV or Web Command Center.
+   * Streaming token delivery with natural Text-To-Speech (TTS) spoken feedback.
+   * Users can interrupt the assistant at any time simply by speaking again or tapping the remote mic.
+5. **Rock-Solid Security**:
+   * NVIDIA API credentials remain strictly confined to the backend server environment (`.env`). No credentials are ever leaked to client bundles or TV network requests.
+
+---
+
 ## 📁 Repository Structure
 
 ```text
