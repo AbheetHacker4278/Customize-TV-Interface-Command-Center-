@@ -15,16 +15,9 @@ import {
   readSetting, 
   saveRecordingRecord, 
   getRecordings, 
-  deleteRecordingRecord,
-  getClockFaces,
-  getClockFaceById,
-  saveClockFace,
-  updateClockFace,
-  deleteClockFace,
-  getActiveClockFace,
-  setActiveClockFace
+  deleteRecordingRecord
 } from './db.js';
-import { captureTvScreenshot, execTvShell, updateTvHomeClock } from './tvBridge.js';
+import { captureTvScreenshot, execTvShell } from './tvBridge.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,9 +46,6 @@ const wallpapersDir = path.join(__dirname, 'public', 'wallpapers');
 if (!fs.existsSync(wallpapersDir)) fs.mkdirSync(wallpapersDir, { recursive: true });
 app.use('/wallpapers', express.static(wallpapersDir));
 
-// TV Clock standalone browser page
-const tvClockDir = path.join(__dirname, 'public', 'tv-clock');
-app.use('/tv-clock', express.static(tvClockDir));
 
 // Helper to determine Host IP on the local network (for TV intent access)
 export function getHostIp() {
@@ -98,7 +88,7 @@ function authMiddleware(req, res, next) {
     return next();
   }
   // Allow initial health/status endpoints and TV browser clock to read active design
-  if (req.path === '/api/auth/verify' || req.path === '/api/status/public' || req.path === '/api/clock-faces/active') {
+  if (req.path === '/api/auth/verify' || req.path === '/api/status/public') {
     return next();
   }
   res.status(401).json({ error: 'Unauthorized. Please provide valid Dashboard Key.' });
@@ -431,194 +421,6 @@ app.delete('/api/recordings/:id', authMiddleware, (req, res) => {
   }
 });
 
-// ---------------- Custom Clock Face Studio Routes ----------------
-let tvClockConnectedClients = 0;
-
-app.get('/api/clock-faces', authMiddleware, (req, res) => {
-  try {
-    const list = getClockFaces();
-    const active = getActiveClockFace();
-    res.json({
-      success: true,
-      clockFaces: list,
-      activeId: active ? active.id : null,
-      tvClockOnline: tvClockConnectedClients > 0,
-      tvClockClients: tvClockConnectedClients,
-      tvClockUrl: `http://${getHostIp()}:${PORT}/tv-clock`
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.get('/api/clock-faces/active', (req, res) => {
-  try {
-    const face = getActiveClockFace();
-    res.json({ success: true, face });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.get('/api/clock-faces/:id', authMiddleware, (req, res) => {
-  try {
-    const face = getClockFaceById(req.params.id);
-    if (!face) return res.status(404).json({ error: 'Clock face not found' });
-    res.json({ success: true, face });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/clock-faces', authMiddleware, (req, res) => {
-  const { name, style, config, isDefault } = req.body;
-  if (!name || !style) return res.status(400).json({ error: 'Name and style are required' });
-  const id = `clock_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  try {
-    const created = saveClockFace(id, name, style, config || {}, isDefault || 0);
-    logAction('Clock Studio', 'Created Clock Face', `${name} (${style})`);
-    res.json({ success: true, face: created });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.put('/api/clock-faces/:id', authMiddleware, (req, res) => {
-  const { name, style, config, isDefault } = req.body;
-  const { id } = req.params;
-  try {
-    const updated = updateClockFace(id, name, style, config, isDefault);
-    if (!updated) return res.status(404).json({ error: 'Clock face not found' });
-
-    // If updating currently active clock face, broadcast live update to TV
-    const active = getActiveClockFace();
-    if (active && active.id === id) {
-      io.emit('clock_face_updated', updated);
-    }
-
-    logAction('Clock Studio', 'Updated Clock Face', `${name} (${id})`);
-    res.json({ success: true, face: updated });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/clock-faces/:id/duplicate', authMiddleware, (req, res) => {
-  const { id } = req.params;
-  try {
-    const original = getClockFaceById(id);
-    if (!original) return res.status(404).json({ error: 'Original clock face not found' });
-    const newId = `clock_${Date.now()}_copy`;
-    const newName = `${original.name} (Copy)`;
-    const duplicated = saveClockFace(newId, newName, original.style, original.config, 0);
-    logAction('Clock Studio', 'Duplicated Clock Face', `${newName} from ${original.name}`);
-    res.json({ success: true, face: duplicated });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.delete('/api/clock-faces/:id', authMiddleware, (req, res) => {
-  const { id } = req.params;
-  try {
-    const deleted = deleteClockFace(id);
-    if (!deleted) return res.status(404).json({ error: 'Clock face not found' });
-    logAction('Clock Studio', 'Deleted Clock Face', deleted.name);
-    res.json({ success: true, message: 'Clock face deleted' });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/clock-faces/:id/apply', authMiddleware, async (req, res) => {
-  const { id } = req.params;
-  const { autoLaunch = true } = req.body;
-  try {
-    const active = setActiveClockFace(id);
-
-    // Broadcast live change to all connected clients & TV browser instantly
-    io.emit('clock_face_updated', active);
-
-    const hostIp = getHostIp();
-    const tvClockUrl = `http://${hostIp}:${PORT}/tv-clock`;
-
-    let launchResult = 'Broadcasted via WebSocket';
-    if (autoLaunch) {
-      try {
-        const cmd = `am start -a android.intent.action.VIEW -d "${tvClockUrl}"`;
-        launchResult = await execTvShell(tvService.targetIp, cmd);
-      } catch (e) {
-        console.warn('[Server] Could not auto-launch TV browser via ADB:', e.message);
-      }
-    }
-
-    logAction('Clock Studio', 'Applied Clock Face to TV', `${active.name} (${active.style})`);
-    res.json({ success: true, face: active, launchResult, tvClockUrl });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/clock-faces/tv/launch', authMiddleware, async (req, res) => {
-  try {
-    const hostIp = getHostIp();
-    const tvClockUrl = `http://${hostIp}:${PORT}/tv-clock`;
-    const cmd = `am start -a android.intent.action.VIEW -d "${tvClockUrl}"`;
-    const output = await execTvShell(tvService.targetIp, cmd);
-    logAction('Clock Studio', 'Launched Clock on TV Browser', tvClockUrl);
-    res.json({ success: true, url: tvClockUrl, output });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/clock-faces/upload-bg', authMiddleware, (req, res) => {
-  const { dataBase64 } = req.body;
-  if (!dataBase64) return res.status(400).json({ error: 'No image data provided' });
-  try {
-    const raw = dataBase64.replace(/^data:image\/\w+;base64,/, '');
-    const buffer = Buffer.from(raw, 'base64');
-    const match = dataBase64.match(/^data:image\/(\w+);base64,/);
-    const ext = match && (match[1] === 'png' || match[1] === 'webp') ? match[1] : 'jpg';
-    const safeName = `clock_bg_${Date.now()}.${ext}`;
-    const dest = path.join(wallpapersDir, safeName);
-    fs.writeFileSync(dest, buffer);
-    res.json({ success: true, url: `/wallpapers/${safeName}`, filename: safeName });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// ---------------- TV Home Screen Clock (Top-Left) Routes ----------------
-app.get('/api/home-clock', authMiddleware, async (req, res) => {
-  try {
-    const saved = readSetting('home_clock_config', null);
-    if (saved) {
-      return res.json({ success: true, homeClock: JSON.parse(saved) });
-    }
-    const raw = await execTvShell(tvService.targetIp, 'cat /sdcard/Android/data/com.gathin.tvhome/files/config.json');
-    let parsed = {};
-    try { parsed = JSON.parse(raw); } catch(e){}
-    res.json({ success: true, homeClock: parsed.home_clock || null });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/home-clock/apply', authMiddleware, async (req, res) => {
-  const { clockConfig } = req.body;
-  if (!clockConfig) return res.status(400).json({ error: 'clockConfig is required' });
-
-  try {
-    saveSetting('home_clock_config', JSON.stringify(clockConfig));
-    const result = await updateTvHomeClock(tvService.targetIp, clockConfig);
-    logAction('Home Clock', 'Applied Clock to TV Home Screen', `${clockConfig.style || 'Custom'} (${clockConfig.size || 58}sp)`);
-    res.json({ success: true, result });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
 // Auto Cache Cleaner Action
 app.post('/api/maintenance/clean-cache', authMiddleware, async (req, res) => {
   try {
@@ -710,17 +512,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // TV Clock browser online / presence
-  socket.on('tv_clock_online', (data) => {
-    tvClockConnectedClients++;
-    console.log(`[Socket] TV Clock browser online (${tvClockConnectedClients} active TV displays)`, data);
-    io.emit('tv_clock_status', { online: true, count: tvClockConnectedClients });
-    
-    socket.on('disconnect', () => {
-      tvClockConnectedClients = Math.max(0, tvClockConnectedClients - 1);
-      io.emit('tv_clock_status', { online: tvClockConnectedClients > 0, count: tvClockConnectedClients });
-    });
-  });
 });
 
 // Broadcast TV service events to all connected web clients

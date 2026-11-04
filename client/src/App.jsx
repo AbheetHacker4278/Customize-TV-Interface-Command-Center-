@@ -45,7 +45,6 @@ import {
   X
 } from 'lucide-react';
 import { socket, apiRequest } from './api';
-import ClockFaceStudio from './ClockFaceStudio';
 
 export default function App() {
   const [token, setToken] = useState(localStorage.getItem('tv_dashboard_token') || '');
@@ -613,8 +612,7 @@ export default function App() {
           {[
             { id: 'dashboard', label: 'Dashboard', icon: Activity },
             { id: 'remote', label: 'Virtual Remote', icon: Tv },
-            { id: 'clockfaces', label: 'Clock Face Studio', icon: Clock },
-            { id: 'wallpapers', label: 'Wallpapers & Carousel', icon: Image },
+                        { id: 'wallpapers', label: 'Wallpapers & Carousel', icon: Image },
             { id: 'recordings', label: 'Audio & Recordings', icon: Mic },
             { id: 'apps', label: 'Apps & Streaming', icon: AppWindow },
             { id: 'inputs', label: 'Inputs & HDMI', icon: Layers },
@@ -662,10 +660,7 @@ export default function App() {
       </aside>
 
       {/* Main Content Area */}
-      {activeTab === 'clockfaces' ? (
-        <ClockFaceStudio showToast={showToast} tvConnected={tvConnected} />
-      ) : (
-        <main className="flex-1 flex flex-col h-screen overflow-y-auto bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(14,165,233,0.08),rgba(255,255,255,0))]">
+      <main className="flex-1 flex flex-col h-screen overflow-y-auto bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(14,165,233,0.08),rgba(255,255,255,0))]">
           
           {/* Top Header */}
         <header className="h-16 border-b border-slate-800/80 px-8 flex items-center justify-between backdrop-blur-md bg-slate-950/40 sticky top-0 z-30">
@@ -1788,7 +1783,6 @@ export default function App() {
 
         </div>
       </main>
-      )}
 
     </div>
   );

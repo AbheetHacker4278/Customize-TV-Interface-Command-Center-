@@ -397,65 +397,6 @@ export async function launchTvCarouselPreview(tvIp) {
   return { success: true, message: 'Carousel preview launched on TV' };
 }
 
-/**
- * Updates the native Home Screen Clock (Top-Left of TV Home Screen)
- * and refreshes the launcher instantly without opening any browser.
- */
-export async function updateTvHomeClock(tvIp, homeClockConfig) {
-  const socket = await getDaemonSocket();
-  if (!socket) throw new Error('Persistent ADB daemon is not available');
-
-  // 1. Read existing config.json on the TV
-  let existing = {};
-  try {
-    const raw = await execTvShell(tvIp, 'cat /sdcard/Android/data/com.gathin.tvhome/files/config.json');
-    existing = JSON.parse(raw);
-  } catch (e) {
-    existing = {
-      wallpaper: true,
-      wallpaper_dim: 15,
-      dock_glass: true,
-      dock_even_padding: true,
-      date_below_clock: true,
-      home_idle_clock_minutes: 5,
-      clock_wallpaper: true,
-      clock_wallpaper_dim: 15,
-      columns: 7,
-    };
-  }
-
-  // 2. Merge home_clock configuration
-  existing.home_clock = homeClockConfig;
-
-  // 3. Write temp config and push to TV
-  const fs = await import('fs');
-  const tempPath = path.join(path.dirname(entryPath()), `temp_clk_${Date.now()}.json`);
-  fs.writeFileSync(tempPath, JSON.stringify(existing, null, 2), 'utf-8');
-
-  reqCounter = (reqCounter + 1) % 1000000;
-  const id = String(reqCounter);
-  await new Promise((resolve, reject) => {
-    const timer = setTimeout(() => {
-      pendingRequests.delete(id);
-      reject(new Error('Timeout updating TV config.json'));
-    }, 8000);
-    pendingRequests.set(id, { resolve, reject, timer });
-    socket.write(JSON.stringify({
-      id,
-      type: 'push',
-      local: tempPath,
-      remote: '/sdcard/Android/data/com.gathin.tvhome/files/config.json',
-    }) + '\n');
-  });
-
-  try { fs.unlinkSync(tempPath); } catch (e) {}
-
-  // 4. Update theme revision and force restart the Home Screen so changes take effect immediately
-  const rev = String(Date.now());
-  await execTvShell(tvIp, `echo ${rev} > /sdcard/Android/data/com.gathin.tvhome/files/theme_revision; am force-stop com.gathin.tvhome; am start -a android.intent.action.MAIN -c android.intent.category.HOME`);
-  return { success: true, home_clock: homeClockConfig };
-}
-
 function entryPath() {
   return fileURLToPath ? fileURLToPath(import.meta.url) : __filename;
 }
