@@ -25,7 +25,6 @@ import {
   setActiveClockFace
 } from './db.js';
 import { captureTvScreenshot, execTvShell, updateTvHomeClock } from './tvBridge.js';
-import { handleAssistantQuery, executeAssistantTool, synthesizeElevenLabsSpeech } from './nemotronAssistant.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -669,111 +668,6 @@ app.post('/api/terminal/exec', authMiddleware, async (req, res) => {
     res.json({ success: true, output });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-// ---------------- AI Voice Assistant (NVIDIA Nemotron) ----------------
-app.post('/api/assistant/chat', async (req, res) => {
-  const { message, history = [] } = req.body;
-  if (!message || typeof message !== 'string') {
-    return res.status(400).json({ success: false, error: 'Query message required' });
-  }
-
-  try {
-    const formattedHistory = history.map(h => ({
-      role: h.role === 'assistant' ? 'assistant' : 'user',
-      content: String(h.content || '')
-    }));
-    formattedHistory.push({ role: 'user', content: message });
-
-    const result = await handleAssistantQuery({
-      messages: formattedHistory,
-      onDelta: (delta) => {
-        io.emit('assistant_delta', { delta });
-      },
-      onToolExecute: (tool) => {
-        io.emit('assistant_tool', tool);
-        logAction('AI Assistant', `Tool Executed: ${tool.name}`, JSON.stringify(tool.args || {}));
-      }
-    });
-
-    logAction('AI Assistant', 'Voice Query Processed', `User: "${message}" -> AI: "${result.reply}"`);
-    const hostIp = getHostIp();
-    const ttsUrl = `http://${hostIp}:${PORT}/api/assistant/tts?text=${encodeURIComponent(result.reply)}`;
-    res.json({
-      success: true,
-      reply: result.reply,
-      toolExecuted: result.toolExecuted,
-      ttsUrl
-    });
-  } catch (err) {
-    console.error('AI Assistant API Error:', err);
-    res.status(500).json({
-      success: false,
-      error: err.message || 'Error processing AI query',
-      reply: "I am having trouble connecting to NVIDIA Nemotron right now. Please verify network access."
-    });
-  }
-});
-
-app.get('/api/assistant/openjarvis/status', (req, res) => {
-  res.json({
-    success: true,
-    name: 'OpenJarvis AI Assistant',
-    version: '1.0.5',
-    engine: 'NVIDIA Nemotron 120B (NIM)',
-    model: 'nvidia/nemotron-3.5-super-vl-120b-a12b',
-    tts: {
-      backend: 'elevenlabs',
-      preferredVoiceId: 'ibbx9zDYGvLgtYzRbqqG',
-      voiceName: 'Bunty (Smart Friendly Assistant)',
-      fallbackVoiceId: 'JBFqnCBsd6RMkjVDRZzb',
-      fallbackVoiceName: 'George (Warm British Jarvis)'
-    },
-    tvMode: 'Pure Voice Only'
-  });
-});
-
-app.get('/api/assistant/tts', async (req, res) => {
-  const text = req.query.text;
-  if (!text) return res.status(400).send('Text required');
-  try {
-    const audioBuffer = await synthesizeElevenLabsSpeech(text);
-    if (audioBuffer) {
-      res.setHeader('Content-Type', 'audio/mpeg');
-      res.setHeader('Content-Length', audioBuffer.length);
-      res.send(audioBuffer);
-    } else {
-      res.status(502).send('TTS synthesis failed');
-    }
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-});
-
-app.post('/api/assistant/trigger', async (req, res) => {
-  try {
-    await execTvShell(tvService.targetIp, 'am start -n com.gathin.tvhome/.AssistantActivity');
-    logAction('AI Assistant', 'Assistant Summoned', 'Triggered from Web Command Center');
-    res.json({ success: true, message: 'AI Voice Assistant opened on Sony TV' });
-  } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-app.post('/api/assistant/elevenlabs', async (req, res) => {
-  const { text } = req.body;
-  if (!text) return res.status(400).json({ error: 'Text required' });
-  const audioBuffer = await synthesizeElevenLabsSpeech(text);
-  if (audioBuffer) {
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.send(audioBuffer);
-  } else {
-    res.status(403).json({ 
-      success: false, 
-      fallback: true,
-      message: 'ElevenLabs API key missing text_to_speech permission. Using system speech synthesis fallback.' 
-    });
   }
 });
 
