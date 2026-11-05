@@ -2,9 +2,9 @@ FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Install client dependencies & build
+# Install client dependencies (including Vite & build tools) & build
 COPY client/package*.json ./client/
-RUN cd client && npm install
+RUN cd client && npm install --include=dev
 
 COPY client ./client
 RUN cd client && npm run build
