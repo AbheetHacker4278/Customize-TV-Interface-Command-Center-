@@ -178,7 +178,7 @@ cd ../cleanyourtv/launcher
 ./gradlew.bat assembleRelease
 
 # Install directly to your TV via ADB
-adb connect 192.168.29.29:5555
+adb connect 192.168.XX.XX:5555
 adb install -r app/build/outputs/apk/release/app-release.apk
 
 # Launch as default Home
