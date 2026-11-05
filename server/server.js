@@ -527,6 +527,9 @@ tvService.on('device_info', (info) => {
   io.emit('device_info', info);
 });
 
+// Link socket.io instance for connection-aware polling
+tvService.setIo(io);
+
 // Start TV polling service and HTTP server
 tvService.start();
 

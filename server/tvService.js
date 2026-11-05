@@ -14,7 +14,8 @@ class TvService extends EventEmitter {
     this.targetIp = readSetting('tv_target_ip', '192.168.29.29');
     this.isConnected = false;
     this.isPolling = false;
-    this.pollIntervalMs = 2500;
+    this.pollIntervalMs = 20000; // Efficient, low-overhead sync interval
+    this.io = null;
     this.deviceInfo = {
       model: 'BRAVIA 4K GB ATV3',
       brand: 'Sony',
@@ -55,6 +56,10 @@ class TvService extends EventEmitter {
     }
   }
 
+  setIo(io) {
+    this.io = io;
+  }
+
   start() {
     console.log(`Starting TV sync monitor for ${this.targetIp}...`);
     this.pollState();
@@ -67,14 +72,18 @@ class TvService extends EventEmitter {
 
   async pollState() {
     if (this.isPolling) return;
+    // When no web clients are watching the dashboard, skip continuous polling to keep TV CPU at 0%
+    if (this.io && this.io.engine && this.io.engine.clientsCount === 0) {
+      return;
+    }
     this.isPolling = true;
 
     try {
-      // 1. Quick probe: power & current focus
+      // 1. Lightweight probe: power, audio & active activity (no dumpsys window locks!)
       const res = await execTvShell(
         this.targetIp,
-        "dumpsys power | grep -E 'mWakefulness='; dumpsys audio | grep -A 5 -i 'STREAM_MUSIC:'; dumpsys window | grep -E 'mCurrentFocus='",
-        3500
+        "dumpsys power | grep -E 'mWakefulness='; dumpsys audio | grep -A 5 -i 'STREAM_MUSIC:'; dumpsys activity activities | grep -E 'mResumedActivity'",
+        3000
       );
 
       const wasConnected = this.isConnected;
@@ -101,10 +110,10 @@ class TvService extends EventEmitter {
       }
       this.state.muted = /STREAM_MUSIC:[\s\S]*?Muted:\s*true/i.test(res);
 
-      // Parse Current App
-      const focusMatch = res.match(/mCurrentFocus=Window\{[0-9a-f]+ u0 ([^\/]+)\/([^\}]+)\}/i);
-      if (focusMatch) {
-        const pkg = focusMatch[1];
+      // Parse Current App (lightweight from ActivityManager without WindowManager global lock)
+      const actMatch = res.match(/mResumedActivity:\s*ActivityRecord\{[0-9a-f]+\s+u0\s+([^\/]+)\/([^\s\}]+)/i);
+      if (actMatch) {
+        const pkg = actMatch[1];
         this.state.currentApp = pkg;
         this.state.currentAppLabel = this.friendlyAppLabel(pkg);
       }

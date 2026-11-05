@@ -326,7 +326,7 @@ export async function pushTvCarouselImages(tvIp, imageEntries) {
     });
   }
 
-  // 3. Ensure config.json has 5-min idle and clock wallpaper enabled
+  // 3. Ensure config.json keeps 0-min idle (never interrupt running apps or auto-start)
   const configContent = JSON.stringify({
     wallpaper: true,
     wallpaper_dim: 15,
@@ -340,13 +340,19 @@ export async function pushTvCarouselImages(tvIp, imageEntries) {
       "in.startv.hotstar",
       "com.jio.media.stb.ondemand",
       "com.mxtech.videoplayer.television",
-      "com.gathin.tvhome.cleaner"
+      "com.gathin.tvhome.cleaner",
+      "com.jio.media.jiotvplus",
+      "com.android.vending"
     ],
-    columns: 7,
-    ambient_glow: false,
+    columns: 8,
+    single_row: true,
+    rows_below_dock: 0,
+    ambient_glow: true,
+    dock_band_all: true,
+    cinematic_dots: false,
     module_cards: false,
     wallpaper_rotation_minutes: 0,
-    home_idle_clock_minutes: 5,
+    home_idle_clock_minutes: 0,
     clock_wallpaper: true,
     clock_wallpaper_dim: 15
   }, null, 2);
@@ -377,14 +383,14 @@ export async function pushTvCarouselImages(tvIp, imageEntries) {
     console.warn('[tvBridge] Config push notice:', err.message);
   }
 
-  // 4. Update system dream timeout to 5 minutes (300,000 ms) & bump theme revision
+  // 4. Ensure system screensaver stays strictly disabled (0) & bump theme revision
   const rev = String(Date.now());
-  await execTvShell(tvIp, `settings put secure screensaver_timeout 300000; settings put secure screensaver_enabled 1; echo ${rev} > /sdcard/Android/data/com.gathin.tvhome/files/theme_revision; am force-stop com.gathin.tvhome; am start -a android.intent.action.MAIN -c android.intent.category.HOME`);
+  await execTvShell(tvIp, `settings put secure screensaver_timeout 0; settings put secure screensaver_enabled 0; echo ${rev} > /sdcard/Android/data/com.gathin.tvhome/files/theme_revision; am force-stop com.gathin.tvhome; am start -a android.intent.action.MAIN -c android.intent.category.HOME`);
 
   return {
     success: true,
     count: imageEntries.length,
-    message: `Applied ${imageEntries.length} carousel image(s) with 5-minute inactivity auto-start and faded transitions!`,
+    message: `Applied ${imageEntries.length} carousel image(s)! Auto-screensaver kept disabled during app usage.`,
   };
 }
 
