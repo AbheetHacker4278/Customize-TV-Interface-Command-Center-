@@ -3,10 +3,15 @@ import net from 'net';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// CleanYourTV python virtual environment & bridge
-const PYTHON_PATH = 'C:\\Users\\Admin\\.gemini\\antigravity\\scratch\\cleanyourtv\\tools\\venv\\Scripts\\python.exe';
-const TV_PY_PATH = 'C:\\Users\\Admin\\.gemini\\antigravity\\scratch\\cleanyourtv\\tools\\tv.py';
-const ADB_DAEMON_PATH = 'C:\\Users\\Admin\\.gemini\\antigravity\\scratch\\tv-control-center\\server\\adbDaemon.py';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Dynamic python and helper paths (cross-platform Windows/Linux & Render friendly)
+const PYTHON_PATH = process.env.PYTHON_PATH || (process.platform === 'win32'
+  ? 'C:\\Users\\Admin\\.gemini\\antigravity\\scratch\\cleanyourtv\\tools\\venv\\Scripts\\python.exe'
+  : 'python3');
+const TV_PY_PATH = process.env.TV_PY_PATH || path.join(__dirname, 'tv.py');
+const ADB_DAEMON_PATH = process.env.ADB_DAEMON_PATH || path.join(__dirname, 'adbDaemon.py');
 
 const DAEMON_PORT = 5055;
 const DAEMON_HOST = '127.0.0.1';

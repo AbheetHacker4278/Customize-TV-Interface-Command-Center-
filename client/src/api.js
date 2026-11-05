@@ -1,6 +1,10 @@
 import { io } from 'socket.io-client';
 
-const socketUrl = window.location.hostname === 'localhost' ? 'http://localhost:5050' : `http://${window.location.hostname}:5050`;
+// In development with Vite dev server on port 5173, point to local backend on 5050.
+// In production (Render, Docker, or Express static), connect to current window origin seamlessly.
+const socketUrl = typeof window !== 'undefined' && window.location.port === '5173'
+  ? 'http://localhost:5050'
+  : (typeof window !== 'undefined' ? window.location.origin : '');
 
 export const socket = io(socketUrl, {
   autoConnect: true,

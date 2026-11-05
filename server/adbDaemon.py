@@ -26,7 +26,11 @@ TV_HOST = os.environ.get("TV_HOST", "192.168.29.29")
 TV_PORT = int(os.environ.get("TV_PORT", "5555"))
 SERVER_PORT = int(os.environ.get("DAEMON_PORT", "5055"))
 
-KEY_PATH = r"C:\Users\Admin\.gemini\antigravity\scratch\cleanyourtv\tools\adbkey\adbkey"
+KEY_PATH = os.environ.get("ADB_KEY_PATH", os.path.join(os.path.dirname(os.path.abspath(__file__)), "adbkey", "adbkey"))
+if not os.path.isfile(KEY_PATH):
+    alt_key = r"C:\Users\Admin\.gemini\antigravity\scratch\cleanyourtv\tools\adbkey\adbkey"
+    if os.path.isfile(alt_key):
+        KEY_PATH = alt_key
 
 def get_signer():
     with open(KEY_PATH) as f:

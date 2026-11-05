@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "Apple TV-inspired minimalist interface, high-speed remote control system, and web-based command center for Android TV / Sony BRAVIA 4K Smart TVs",
   "scripts": {
-    "start": "cd server && node server.js",
-    "build:client": "cd client && npm run build",
-    "install:all": "cd client && npm install && cd ../server && npm install"
+    "start": "node server/server.js",
+    "build": "npm --prefix client install && npm --prefix client run build && npm --prefix server install",
+    "install:all": "npm --prefix client install && npm --prefix server install",
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "node server/server.js"
   },
   "keywords": [
     "android-tv",

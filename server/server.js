@@ -87,14 +87,19 @@ function authMiddleware(req, res, next) {
   if (token && token === adminPassword) {
     return next();
   }
-  // Allow initial health/status endpoints and TV browser clock to read active design
-  if (req.path === '/api/auth/verify' || req.path === '/api/status/public') {
+  // Allow health checks, initial health/status endpoints
+  if (req.path === '/health' || req.path === '/api/auth/verify' || req.path === '/api/status/public') {
     return next();
   }
   res.status(401).json({ error: 'Unauthorized. Please provide valid Dashboard Key.' });
 }
 
 // ---------------- REST API Routes ----------------
+
+// Health check for cloud deployment (Render, Fly.io, Railway)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
 
 // Verify Password
 app.post('/api/auth/verify', (req, res) => {

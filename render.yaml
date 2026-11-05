@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: customize-tv-command-center
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ADMIN_PASSWORD
+        value: bravia2026
+      - key: TV_TARGET_IP
+        value: 192.168.29.29
