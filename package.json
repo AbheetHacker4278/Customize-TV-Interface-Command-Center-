@@ -1,11 +1,12 @@
 {
   "name": "customize-tv-interface-command-center",
   "version": "1.0.0",
+  "type": "module",
   "description": "Apple TV-inspired minimalist interface, high-speed remote control system, and web-based command center for Android TV / Sony BRAVIA 4K Smart TVs",
   "scripts": {
     "start": "node server/server.js",
-    "build": "npm --prefix client install --include=dev && npm --prefix client run build && npm --prefix server install",
-    "install:all": "npm --prefix client install --include=dev && npm --prefix server install",
+    "build": "node build.js",
+    "install:all": "node build.js",
     "dev:client": "npm --prefix client run dev",
     "dev:server": "node server/server.js"
   },

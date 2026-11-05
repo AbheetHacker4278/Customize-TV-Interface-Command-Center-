@@ -226,29 +226,32 @@ app.post('/api/input/switch', authMiddleware, async (req, res) => {
 
 // App Management
 app.get('/api/apps', authMiddleware, async (req, res) => {
+  const defaultCatalog = [
+    { pkg: 'com.gathin.tvhome', name: 'Clean Apple TV Launcher', icon: 'Sparkles', category: 'System' },
+    { pkg: 'com.google.android.youtube.tv', name: 'YouTube', icon: 'Play', category: 'Streaming' },
+    { pkg: 'com.netflix.ninja', name: 'Netflix', icon: 'Film', category: 'Streaming' },
+    { pkg: 'com.amazon.amazonvideo.livingroom', name: 'Prime Video', icon: 'Tv', category: 'Streaming' },
+    { pkg: 'in.startv.hotstar', name: 'Disney+ Hotstar', icon: 'Star', category: 'Streaming' },
+    { pkg: 'com.jio.media.stb.ondemand', name: 'JioCinema', icon: 'Clapperboard', category: 'Streaming' },
+    { pkg: 'com.mxtech.videoplayer.television', name: 'MX Player TV', icon: 'Video', category: 'Media Player' },
+    { pkg: 'com.jio.media.jiotvplus', name: 'JioTV+', icon: 'Tv', category: 'Live TV' },
+    { pkg: 'com.gathin.tvhome.cleaner', name: 'TV Cache Optimizer', icon: 'Trash2', category: 'Utility' },
+    { pkg: 'com.android.tv.settings', name: 'Android TV Settings', icon: 'Settings', category: 'System' },
+    { pkg: 'com.sony.dtv.tvx', name: 'Live TV & Inputs', icon: 'Radio', category: 'Live TV' },
+  ];
+
   try {
-    const raw = await execTvShell(tvService.targetIp, 'pm list packages -3; pm list packages -s | grep -E "youtube|netflix|amazon|hotstar|jio|browser|gallery"');
+    const raw = await execTvShell(tvService.targetIp, 'pm list packages -3; pm list packages -s | grep -E "youtube|netflix|amazon|hotstar|jio|browser|gallery"', 3500);
     const packages = raw
       .split('\n')
       .map(l => l.replace('package:', '').trim())
       .filter(Boolean);
 
-    // Friendly metadata map
-    const appCatalog = [
-      { pkg: 'com.gathin.tvhome', name: 'Clean Apple TV Launcher', icon: 'Sparkles', category: 'System' },
-      { pkg: 'com.google.android.youtube.tv', name: 'YouTube', icon: 'Play', category: 'Streaming' },
-      { pkg: 'com.netflix.ninja', name: 'Netflix', icon: 'Film', category: 'Streaming' },
-      { pkg: 'com.amazon.amazonvideo.livingroom', name: 'Prime Video', icon: 'Tv', category: 'Streaming' },
-      { pkg: 'in.startv.hotstar', name: 'Disney+ Hotstar', icon: 'Star', category: 'Streaming' },
-      { pkg: 'com.jio.media.stb.ondemand', name: 'JioCinema', icon: 'Clapperboard', category: 'Streaming' },
-      { pkg: 'com.mxtech.videoplayer.television', name: 'MX Player TV', icon: 'Video', category: 'Media Player' },
-      { pkg: 'com.android.tv.settings', name: 'Android TV Settings', icon: 'Settings', category: 'System' },
-      { pkg: 'com.sony.dtv.tvx', name: 'Live TV & Inputs', icon: 'Radio', category: 'Live TV' },
-    ];
+    if (!packages || packages.length === 0) {
+      return res.json({ apps: defaultCatalog, currentApp: tvService.state.currentApp, isOffline: !tvService.isConnected });
+    }
 
-    // Combine
-    const installed = appCatalog.filter(a => packages.includes(a.pkg));
-    // Append any extra 3rd party package not in the catalog
+    const installed = defaultCatalog.filter(a => packages.includes(a.pkg));
     packages.forEach(pkg => {
       if (!installed.find(a => a.pkg === pkg)) {
         installed.push({ pkg, name: pkg, icon: 'AppWindow', category: 'App' });
@@ -257,7 +260,13 @@ app.get('/api/apps', authMiddleware, async (req, res) => {
 
     res.json({ apps: installed, currentApp: tvService.state.currentApp });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.warn('[Server] Could not query live packages (TV offline or bridge fallback):', err.message);
+    res.json({
+      apps: defaultCatalog,
+      currentApp: tvService.state.currentApp,
+      isOffline: true,
+      notice: 'TV is offline or unreachable from cloud host. Displaying standard installed catalog.'
+    });
   }
 });
 
@@ -456,7 +465,17 @@ app.get('/api/screen/snapshot', authMiddleware, async (req, res) => {
 
     res.json({ success: true, url: `/shots/${fileName}?t=${Date.now()}` });
   } catch (err) {
-    res.status(500).json({ success: false, error: err.message });
+    console.warn('[Server] Screen snapshot failed (TV offline or bridge error):', err.message);
+    const defaultShot = path.join(__dirname, '..', 'docs', 'images', 'tv-home-clean-dock.png');
+    const fallbackFile = 'current_tv_screen.png';
+    const fallbackPath = path.join(shotsDir, fallbackFile);
+    if (fs.existsSync(defaultShot) && !fs.existsSync(fallbackPath)) {
+      try { fs.copyFileSync(defaultShot, fallbackPath); } catch (e) {}
+    }
+    if (fs.existsSync(fallbackPath)) {
+      return res.json({ success: true, url: `/shots/${fallbackFile}?t=${Date.now()}`, isOffline: true });
+    }
+    res.json({ success: false, isOffline: true, error: 'TV is currently offline or unreachable from cloud host.' });
   }
 });
 
